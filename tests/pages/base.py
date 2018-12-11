@@ -4,7 +4,9 @@ from functools import wraps
 
 import pytest
 from pypom import Page, Region
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.common.exceptions import (ElementClickInterceptedException,
+                                        NoSuchElementException,
+                                        TimeoutException)
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -36,6 +38,8 @@ class BasePage(Page):
     DEFAULT_ANIMATION_DURATION = 0.5  # defined in styles/includes/_vars.scss
     PAYMENTS_POPUP = (By.ID, 'contribution-popover-container')
     PAYMENTS_POPUP_CLOSE_BUTTON = (By.ID, 'close-popover-button')
+    GROWL = (By.CSS_SELECTOR,
+             'div.notification-tray > div.notification:first-child')
 
     def __init__(self, selenium, base_url, locale='en-US', **url_kwargs):
         super(BasePage, self).__init__(selenium, base_url, locale=locale, **url_kwargs)
@@ -82,6 +86,16 @@ class BasePage(Page):
                 self.find_element(*self.PAYMENTS_POPUP_CLOSE_BUTTON).click()
                 self.wait.until(lambda s: not popover.is_displayed())
 
+    def close_growl(self):
+        try:
+            growl = self.find_element(*self.GROWL)
+        except NoSuchElementException:
+            return
+        else:
+            if growl.is_displayed():
+                growl.find_element(By.CSS_SELECTOR, 'button.close').click()
+                self.wait.until(lambda s: not growl.is_displayed())
+
     class Header(Region):
         report_content_form_url = 'https://bugzilla.mozilla.org/form.doc'
         report_bug_form_url = 'https://bugzilla.mozilla.org/form.mdn'
@@ -123,7 +137,15 @@ class BasePage(Page):
             return self.find_element(By.CSS_SELECTOR, self.SIGNIN_SELECTOR)
 
         def trigger_signin(self):
-            self.signin_link.click()
+            try:
+                self.signin_link.click()
+            except ElementClickInterceptedException:
+                growl = self.find_element(*self.GROWL)
+                print 'RYAN: growl=', growl
+                if growl.is_displayed():
+                    close = growl.find_element(By.CSS_SELECTOR, 'button.close')
+                    print 'RYAN: close=', close
+                raise
 
         @property
         def is_signin_displayed(self):

@@ -71,8 +71,8 @@ def test_header_signin(base_url, selenium):
     page = ArticlePage(selenium, base_url).open()
     # click on sign in widget
     page.header.trigger_signin()
-    # assert it's fowarded to github
-    assert 'https://github.com' in str(selenium.current_url)
+    # wait until it's fowarded to github
+    page.wait.until(lambda s: 'https://github.com' in s.current_url)
 
 
 @pytest.mark.smoke
