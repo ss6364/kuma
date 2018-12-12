@@ -23,7 +23,6 @@ services:
             --base-url=${BASE_URL:-https://developer.allizom.org}
             --junit-prefix=${BROWSER:-chrome}
             --junit-xml=/app/test_results/functional-${BROWSER:-chrome}.xml
-            --reruns=2
             -vv ${PYTEST_OPTS:-}"
         environment:
             - URLWAIT_TIMEOUT=300
